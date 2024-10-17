@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Ed Baker" />
+
+<meta name="date" content="2024-10-17" />
+
+<title>Use of TGWG Audiovisual Core terms relating to rights on GBIF</title>
+
+<script src="TDWG-AC-Use-of-rights-GBIF_files/header-attrs-2.28/header-attrs.js"></script>
+<script src="TDWG-AC-Use-of-rights-GBIF_files/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="TDWG-AC-Use-of-rights-GBIF_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="TDWG-AC-Use-of-rights-GBIF_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="TDWG-AC-Use-of-rights-GBIF_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="TDWG-AC-Use-of-rights-GBIF_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="TDWG-AC-Use-of-rights-GBIF_files/navigation-1.1/tabsets.js"></script>
+<link href="TDWG-AC-Use-of-rights-GBIF_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="TDWG-AC-Use-of-rights-GBIF_files/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Use of TGWG Audiovisual Core terms relating
+to rights on GBIF</h1>
+<h4 class="author">Ed Baker</h4>
+<h4 class="date">2024-10-17</h4>
+
+</div>
+
+
+<div id="background" class="section level2">
+<h2>Background</h2>
+<p>The TDWG <a href="https://ac.tdwg.org/">Audiovisual Core</a> (AC)
+standard includes terms for describing rights information for media
+items. In response to issues raised on the AC GitHub repository, this
+analysis was conducted to determine the extent to which these terms are
+used in media items on GBIF.</p>
+<p>The data represents 77,668,167 media items from 534 datasets provided
+by GBIF. Datasets are included only if they make use of the AC
+extension.</p>
+</div>
+<div id="term-definitions" class="section level2">
+<h2>Term definitions</h2>
+<p>The AC standard includes the following terms for rights
+information:</p>
+<ul>
+<li><code>dc:rights</code>: A full-text, readable copyright statement,
+as required by the national legislation of the copyright holder.</li>
+<li><code>dcterms:rights</code>: A URI pointing to structured
+information about rights held in and over the resource</li>
+<li><code>xmpRights:usageTerms</code>: The license statement defining
+how resources might be used. Information on a collection applies to all
+contained objects unless the object has a different statement.</li>
+<li><code>xmpRights:webStatement</code>: A URL defining or further
+elaborating on the license statement (e. g., a web page explaining the
+precise terms of use).</li>
+<li><code>photoshop:credit</code>: The credit to person(s) and/or
+organisation(s) required by the supplier of the item to be used when
+published. This is a free-text field.</li>
+<li><code>xmpRights:owner</code>: A list of the names of the owners of
+the copyright</li>
+</ul>
+</div>
+<div id="term-usage-by-dataset" class="section level2">
+<h2>Term usage by dataset</h2>
+<div id="number-of-datasets-using-each-term" class="section level3">
+<h3>Number of datasets using each term</h3>
+<p>The following terms are not used in any of the datasets:
+<code>xmpRights:owner</code>.</p>
+<p><img src="TDWG-AC-Use-of-rights-GBIF_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+</div>
+<div id="datasets-usings-dcrights-and-dctermsrights"
+class="section level3">
+<h3>Datasets usings dc:rights and dcterms:rights</h3>
+<p><img src="TDWG-AC-Use-of-rights-GBIF_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>75 datasets (representing 1,745,564 media items) use neither
+<code>dc:rights</code> nor <code>dcterms:rights</code>. One or other of
+these terms are required by the AC standard, so a significant number of
+datasets are potentially not compliant.</p>
+</div>
+<div id="datasets-usings-dctermsrights-and-xmprightswebstatement"
+class="section level3">
+<h3>Datasets usings dcterms:rights and xmpRights:webStatement</h3>
+<p><img src="TDWG-AC-Use-of-rights-GBIF_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+</div>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>GBIF/TDWG Multimedia Resources Task Group and Audiovisual Core
+Maintenance Group. 2023. Audiovisual Core Term List. Biodiversity
+Information Standards (TDWG). <a
+href="http://rs.tdwg.org/ac/doc/termlist/2023-09-05"
+class="uri">http://rs.tdwg.org/ac/doc/termlist/2023-09-05</a>.</p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
