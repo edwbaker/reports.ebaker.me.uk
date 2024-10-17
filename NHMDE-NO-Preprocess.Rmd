@@ -107,3 +107,7 @@ barplot(table(nhmde_data$distance_from_road), cex.names=0.8)
 ```
 
 The pre-processing provided by NHMDE has given the factors shorter labels, allowing them to be clearly displayed, and has reordered the levels of the factor to give a more meaningful plot.
+
+## References
+
+Baker E (2024). _NHMDE R Package_. <https://github.com/edwbaker/NHMDE>.
