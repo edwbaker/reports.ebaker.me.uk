@@ -1,0 +1,122 @@
+---
+title: "Use of TGWG Audiovisual Core terms relating to rights on GBIF"
+author: "Ed Baker"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    self_contained: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+match_name <- function(name, tick=FALSE) {
+  if (length(name) > 1) {
+    return(sapply(name, match_name, tick=tick))
+  }
+  if (name == "nb_media_with_dc_rights") {
+    ret = "dc:rights"
+  }
+  if (name == "nb_media_with_dcterms_rights") {
+    ret = "dcterms:rights"
+  }
+  if (name == "nb_media_with_dcterms_usageterms") {
+    ret = "xmpRights:usageTerms"
+  }
+  if (name == "nb_media_with_dcterms_webstatement") {
+    ret = "xmpRights:webStatement"
+  }
+  if (name == "nb_media_with_credit") {
+    ret = "photoshop:credit"
+  }
+  if (name=="nb_media_with_owner") {
+    ret = "xmpRights:owner"
+  }
+  if (!tick) {
+    return(ret)
+  } else {
+    return(paste0("`", ret, "`"))
+  }
+}
+```
+
+```{r get_data, include=FALSE}
+data <- read.csv("data/gbif_number_occ_ac_ext_rights.csv")
+
+colnames(data) <- gsub("nb_media_owner", "nb_media_with_owner", colnames(data))
+
+rights_cols <- startsWith(colnames(data), "nb_media_with_")
+```
+
+## Background
+
+The TDWG [Audiovisual Core](https://ac.tdwg.org/) (AC) standard includes terms for describing rights information for media items. In response to issues raised on the AC GitHub repository, this analysis was conducted to determine the extent to which these terms are used in media items on GBIF.
+
+The data represents `r prettyNum(sum(data$number_of_media), big.mark=",")` media items from `r nrow(data)` datasets provided by GBIF. Datasets are included only if they make use of the AC extension.
+
+## Term definitions
+
+The AC standard includes the following terms for rights information:
+
+- `dc:rights`: A full-text, readable copyright statement, as required by the national legislation of the copyright holder.
+- `dcterms:rights`: A URI pointing to structured information about rights held in and over the resource
+- `xmpRights:usageTerms`: The license statement defining how resources might be used. Information on a collection applies to all contained objects unless the object has a different statement.
+- `xmpRights:webStatement`: A URL defining or further elaborating on the license statement (e. g., a web page explaining the precise terms of use).
+- `photoshop:credit`: The credit to person(s) and/or organisation(s) required by the supplier of the item to be used when published. This is a free-text field.
+- `xmpRights:owner`: A list of the names of the owners of the copyright
+
+## Term usage by dataset
+
+```{r, echo=FALSE}
+unused <- lapply(names(which(colSums(data[rights_cols] != 0)==0)), match_name, tick=TRUE)
+unused <- paste(unused, sep=", ")
+```
+
+### Number of datasets using each term
+
+The following terms are not used in any of the datasets: `r unused`.
+
+
+```{r, echo=FALSE}
+barplot(
+  colSums(data[rights_cols] != 0),
+  names.arg = gsub(":", "\n", match_name(colnames(data[rights_cols]))),
+  cex.names=0.7
+)
+```
+
+### Datasets usings dc:rights and dcterms:rights
+
+```{r, echo=FALSE}
+dc_only <- nrow(data[data$nb_media_with_dc_rights > 0 & data$nb_media_with_dcterms_rights == 0,])
+dcterms_only <- nrow(data[data$nb_media_with_dc_rights == 0 & data$nb_media_with_dcterms_rights > 0,])
+both <- nrow(data[data$nb_media_with_dc_rights > 0 & data$nb_media_with_dcterms_rights > 0,])
+neither <- nrow(data[data$nb_media_with_dc_rights == 0 & data$nb_media_with_dcterms_rights == 0,])
+
+barplot(
+  c(dc_only, dcterms_only, both, neither),
+  names.arg = c("dc:rights", "dcterms:rights", "both", "neither"),
+  cex.names=0.7
+)
+```
+
+`r prettyNum(neither, big.mark=",")` datasets (representing `r prettyNum(sum(data[data$nb_media_with_dc_rights == 0 & data$nb_media_with_dcterms_rights == 0, "number_of_occurrences"]), big.mark = ",")` media items) use neither `dc:rights` nor `dcterms:rights`. One or other of these terms are required by the AC standard, so a significant number of datasets are potentially not compliant.
+
+### Datasets usings dcterms:rights and xmpRights:webStatement
+
+```{r, echo=FALSE}
+dcterms_only <- nrow(data[data$nb_media_with_dcterms_rights > 0 & data$nb_media_with_dcterms_webstatement == 0,])
+webstatement_only <- nrow(data[data$nb_media_with_dcterms_rights == 0 & data$nb_media_with_dcterms_webstatement > 0,])
+both <- nrow(data[data$nb_media_with_dcterms_rights > 0 & data$nb_media_with_dcterms_webstatement > 0,])
+neither <- nrow(data[data$nb_media_with_dcterms_rights == 0 & data$nb_media_with_dcterms_webstatement == 0,])
+
+barplot(
+  c(dcterms_only, webstatement_only, both, neither),
+  names.arg = c("dcterms:rights", "xmpRights:webStatement", "both", "neither"),
+  cex.names=0.7
+)
+```
+
+## References
+
+GBIF/TDWG Multimedia Resources Task Group and Audiovisual Core Maintenance Group. 2023. Audiovisual Core Term List. Biodiversity Information Standards (TDWG). <http://rs.tdwg.org/ac/doc/termlist/2023-09-05>.
