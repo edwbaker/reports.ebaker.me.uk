@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Ed Baker" />
+
+<meta name="date" content="2024-10-17" />
+
+<title>Processing Nature Overheard Exports in R</title>
+
+<script src="NHMDE-NO-Preprocess_files/header-attrs-2.28/header-attrs.js"></script>
+<script src="NHMDE-NO-Preprocess_files/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="NHMDE-NO-Preprocess_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="NHMDE-NO-Preprocess_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="NHMDE-NO-Preprocess_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="NHMDE-NO-Preprocess_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="NHMDE-NO-Preprocess_files/navigation-1.1/tabsets.js"></script>
+<link href="NHMDE-NO-Preprocess_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="NHMDE-NO-Preprocess_files/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Processing Nature Overheard Exports in
+R</h1>
+<h4 class="author">Ed Baker</h4>
+<h4 class="date">2024-10-17</h4>
+
+</div>
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The NHMDE package for R can be used to pre-process the NHM Data
+Ecosystem exports for Nature Overheard to make them suitable for initial
+exploratory analyses in R.</p>
+<div id="installation" class="section level3">
+<h3>Installation</h3>
+<pre class="r"><code># If required, install the devtools package
+if (!requireNamespace(&quot;devtools&quot;, quietly = TRUE)) {
+  install.packages(&quot;devtools&quot;)
+}
+
+# Install the NHMDE package from GitHub
+devtools::install_github(&quot;edwbaker/NHMDE&quot;)
+
+# Load the NHMDE package
+library(NHMDE)</code></pre>
+</div>
+</div>
+<div id="comparison-of-nhmde-with-raw-data" class="section level2">
+<h2>Comparison of NHMDE with raw data</h2>
+<p>The <code>cs_get_data()</code> function from <code>NHMDE</code> is
+used to read data from community science exports from the Data
+Ecosystem. Reading data using <code>cs_get_data()</code> is similar to
+using the standard R function <code>read.csv()</code>, but you must also
+specify the project.</p>
+<pre class="r"><code>raw_data &lt;- read.csv(&quot;nature_overheard__samples.csv&quot;)
+nhmde_data &lt;- cs_get_data(&quot;nature_overheard__samples.csv&quot;, project=&quot;natureoverheard&quot;)</code></pre>
+<p><code>cs_get_data()</code> will return a data frame with the data
+from the file, but unlike <code>read.csv()</code>, it will also check
+that the data has the expected columns and set appropriate data types on
+each column.</p>
+<p>For factors (categorical data types) it will also recode the data
+with shorter labels suitable for use in plots, and reorder the levels of
+the factor to give expected outputs when using standard R functions.</p>
+<p>The checks and transformations applied to the data comprise of those
+applicable to all community science samples, and those specific to the
+project. This is handled internally by the <code>cs_get_data()</code>
+function, but will require new definitions to be created for additional
+projects.</p>
+<p>Examples of the benefits of using <code>cs_get_data()</code> are
+illustrated below.</p>
+<div style="page-break-after: always;"></div>
+<div id="habitat-types" class="section level3">
+<h3>Habitat types</h3>
+<p>The export from the Data Ecosystem has all habitat types recorded for
+a sample in a single column.</p>
+<pre class="r"><code>head(raw_data$habitat_features)</code></pre>
+<pre><code>## [1] &quot;&quot;                                                         
+## [2] &quot;Trees,Shrubs,Hedgerow&quot;                                    
+## [3] &quot;Trees,Shrubs,Hedgerow,Mown lawn,Wildflowers,Garden plants&quot;
+## [4] &quot;Trees,Shrubs,Hedgerow,Wildflowers&quot;                        
+## [5] &quot;Trees,Shrubs,Wildflowers,Garden plants&quot;                   
+## [6] &quot;Shrubs,Mown lawn,Wildflowers&quot;</code></pre>
+<p>The NHMDE package will split these into separate columns, with a
+column for each habitat type.</p>
+<pre class="r"><code>head(nhmde_data$habitat_feature_Trees)</code></pre>
+<pre><code>## [1] FALSE  TRUE  TRUE  TRUE  TRUE FALSE</code></pre>
+<p>This allows for easier analysis of the data, as the habitat types are
+now in separate columns.</p>
+<p>As all of the habitat feature columns start with the same prefix
+(<code>habitat_feature_</code>), it is easy to select them all for
+analysis from the data frame.</p>
+<pre class="r"><code># Identify the columns starting with &quot;habitat_feature_&quot;
+cols &lt;- startsWith(colnames(nhmde_data), &quot;habitat_feature_&quot;)
+
+# Sum the counts of each habitat feature
+counts &lt;- colSums(nhmde_data[, cols])
+
+# Get the names of included columns
+names &lt;- colnames(nhmde_data)[cols]
+
+# Remove the `habitat_feature_` prefix
+names &lt;- gsub(&quot;habitat_feature_&quot;, &quot;&quot;, names)
+
+# Replace space character with newline character to save space in plot
+names &lt;- gsub(&quot; &quot;, &quot;\n&quot;, names)
+
+# 
+barplot(counts, names.arg=names, cex.names=0.8)</code></pre>
+<p><img src="NHMDE-NO-Preprocess_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<div style="page-break-after: always;"></div>
+</div>
+<div id="plotting-distance-from-the-road" class="section level3">
+<h3>Plotting distance from the road</h3>
+<p>Using raw data</p>
+<pre class="r"><code>barplot(table(raw_data$distance_from_road), cex.names=0.8)</code></pre>
+<p><img src="NHMDE-NO-Preprocess_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<div style="page-break-after: always;"></div>
+<p>Using NHMDE</p>
+<pre class="r"><code>barplot(table(nhmde_data$distance_from_road), cex.names=0.8)</code></pre>
+<p><img src="NHMDE-NO-Preprocess_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p>The pre-processing provided by NHMDE has given the factors shorter
+labels, allowing them to be clearly displayed, and has reordered the
+levels of the factor to give a more meaningful plot.</p>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
