@@ -5,7 +5,6 @@ date: "`r Sys.Date()`"
 output:
   html_document: 
     self_contained: false
-  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -14,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-The NHMDE package for R can be used to pre-process the NHM Data Ecosystem exports for Nature Overheard to make them suitable for initial exploratory analyses in R.
+The [NHMDE package](https://github.com/edwbaker/NHMDE) for R can be used to pre-process the NHM Data Ecosystem exports for Nature Overheard to make them suitable for initial exploratory analyses in R.
 
 ### Installation
 
@@ -36,8 +35,8 @@ library(NHMDE)
 The `cs_get_data()` function from `NHMDE` is used to read data from community science exports from the Data Ecosystem. Reading data using `cs_get_data()` is similar to using the standard R function `read.csv()`, but you must also specify the project.
 
 ```{r}
-raw_data <- read.csv("nature_overheard__samples.csv")
-nhmde_data <- cs_get_data("nature_overheard__samples.csv", project="natureoverheard")
+raw_data <- read.csv("data/nature_overheard__samples.csv")
+nhmde_data <- cs_get_data("data/nature_overheard__samples.csv", project="natureoverheard")
 ```
 
 `cs_get_data()` will return a data frame with the data from the file, but unlike `read.csv()`, it will also check that the data has the expected columns and set appropriate data types on each column. 

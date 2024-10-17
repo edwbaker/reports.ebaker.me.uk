@@ -172,9 +172,10 @@ R</h1>
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>The NHMDE package for R can be used to pre-process the NHM Data
-Ecosystem exports for Nature Overheard to make them suitable for initial
-exploratory analyses in R.</p>
+<p>The <a href="https://github.com/edwbaker/NHMDE">NHMDE package</a> for
+R can be used to pre-process the NHM Data Ecosystem exports for Nature
+Overheard to make them suitable for initial exploratory analyses in
+R.</p>
 <div id="installation" class="section level3">
 <h3>Installation</h3>
 <pre class="r"><code># If required, install the devtools package
@@ -196,8 +197,8 @@ used to read data from community science exports from the Data
 Ecosystem. Reading data using <code>cs_get_data()</code> is similar to
 using the standard R function <code>read.csv()</code>, but you must also
 specify the project.</p>
-<pre class="r"><code>raw_data &lt;- read.csv(&quot;nature_overheard__samples.csv&quot;)
-nhmde_data &lt;- cs_get_data(&quot;nature_overheard__samples.csv&quot;, project=&quot;natureoverheard&quot;)</code></pre>
+<pre class="r"><code>raw_data &lt;- read.csv(&quot;data/nature_overheard__samples.csv&quot;)
+nhmde_data &lt;- cs_get_data(&quot;data/nature_overheard__samples.csv&quot;, project=&quot;natureoverheard&quot;)</code></pre>
 <p><code>cs_get_data()</code> will return a data frame with the data
 from the file, but unlike <code>read.csv()</code>, it will also check
 that the data has the expected columns and set appropriate data types on
