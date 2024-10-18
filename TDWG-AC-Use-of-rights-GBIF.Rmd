@@ -32,6 +32,9 @@ match_name <- function(name, tick=FALSE) {
   if (name=="nb_media_with_owner") {
     ret = "xmpRights:owner"
   }
+  if (name == "nb_media_with_attributionlinkurl") {
+    ret = "ac:attributionLinkURL"
+  }
   if (!tick) {
     return(ret)
   } else {
@@ -44,6 +47,7 @@ match_name <- function(name, tick=FALSE) {
 data <- read.csv("data/gbif_number_occ_ac_ext_rights.csv")
 
 colnames(data) <- gsub("nb_media_owner", "nb_media_with_owner", colnames(data))
+colnames(data) <- gsub("nb_media_attributionlinkurl", "nb_media_with_attributionlinkurl", colnames(data))
 
 rights_cols <- startsWith(colnames(data), "nb_media_with_")
 ```
@@ -63,7 +67,8 @@ The AC standard includes the following terms for rights information:
 - `xmpRights:usageTerms`: The license statement defining how resources might be used. Information on a collection applies to all contained objects unless the object has a different statement.
 - `xmpRights:webStatement`: A URL defining or further elaborating on the license statement (e. g., a web page explaining the precise terms of use).
 - `photoshop:credit`: The credit to person(s) and/or organisation(s) required by the supplier of the item to be used when published. This is a free-text field.
-- `xmpRights:owner`: A list of the names of the owners of the copyright
+- `xmpRights:owner`: A list of the names of the owners of the copyright.
+- `ac:attributionLinkURL`: The URL where information about ownership, attribution, etc. of the resource may be found..
 
 ## Term usage by dataset
 
@@ -81,7 +86,7 @@ The following terms are not used in any of the datasets: `r unused`.
 barplot(
   colSums(data[rights_cols] != 0),
   names.arg = gsub(":", "\n", match_name(colnames(data[rights_cols]))),
-  cex.names=0.7
+  cex.names=0.6
 )
 ```
 
