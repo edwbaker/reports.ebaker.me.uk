@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Ed Baker" />
+
+<meta name="date" content="2024-10-21" />
+
+<title>Getting unique values from columns: performance comparison</title>
+
+<script src="Bash-unique-values-from-column_files/header-attrs-2.28/header-attrs.js"></script>
+<script src="Bash-unique-values-from-column_files/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="Bash-unique-values-from-column_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="Bash-unique-values-from-column_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="Bash-unique-values-from-column_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="Bash-unique-values-from-column_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="Bash-unique-values-from-column_files/navigation-1.1/tabsets.js"></script>
+<link href="Bash-unique-values-from-column_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="Bash-unique-values-from-column_files/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Getting unique values from columns:
+performance comparison</h1>
+<h4 class="author">Ed Baker</h4>
+<h4 class="date">2024-10-21</h4>
+
+</div>
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Getting a set of unique values from a column is a common operation in
+data analysis. A commonly suggested technique is to use the
+<code>sort</code> and <code>uniq</code> commands in combination. This
+study compares the performance of this technique with some variations on
+a real-world dataset and some contrived test examples.</p>
+</div>
+<div id="method" class="section level2">
+<h2>Method</h2>
+<div id="datasets" class="section level3">
+<h3>Datasets</h3>
+<p>The dataset is two files derived from a GBIF exported with 89,732,452
+rows and 15 columns <span class="citation">(GBIF.Org User 2024)</span>.
+The investigation focusses on two columns from this dataset:</p>
+<ol style="list-style-type: decimal">
+<li><code>publisher</code> with 30 unique values,</li>
+<li><code>license</code> with 175,716 unique values.</li>
+</ol>
+<p>These columns were isolated into separate files for each column to
+ensure the test is not influenced by column separation.</p>
+<p>In order to compare with three more theoretical benchmarks three
+additional files (with the same number of lines as the real world
+example) were created:</p>
+<ol style="list-style-type: decimal">
+<li><code>same</code>: A file where every line reads “BioAcoustica:
+Sound Library”</li>
+<li><code>unique</code>: A file with incrementing integers</li>
+<li><code>alternate</code>: Alternating lines of true and false</li>
+</ol>
+</div>
+<div id="machine-details" class="section level3">
+<h3>Machine details</h3>
+<p>The tests were performed on a VMWare virtualised instance of Ubuntu
+22.04.05 LTS with 12GB of RAM and 4 Intel Xeon Platinum 8380 CPUs
+running at 2.30GHz.</p>
+</div>
+<div id="timing" class="section level3">
+<h3>Timing</h3>
+<p>The bash <code>time</code> function was used to measure the time
+taken to extract unique values from each column, with 10 repetitions for
+each method. As the real time taken (as reported by <code>time</code>)
+may be affected by other processes running on the system, the sum of
+<code>user</code> and <code>sys</code> time were used as the
+<code>total</code> measure of performance, although the
+<code>real</code> time is also reported as a measure of the time taken
+to run the command and assess the impact of multi-thread operations.
+Tests of single core performance were not conducted as it’s 2024.</p>
+<p>The following methods were tested:</p>
+<ol style="list-style-type: decimal">
+<li><code>sort -u</code></li>
+<li><code>uniq | sort -u</code></li>
+<li><code>sort | uniq</code></li>
+<li><code>uniq | uniq | sort -u</code></li>
+<li><code>uniq | sort | uniq</code></li>
+</ol>
+<p>The file being tested was read by the first <code>sort</code> or
+<code>uniq</code> command, and the output was piped to
+<code>/dev/null</code>.</p>
+</div>
+<div id="notes-on-sort" class="section level3">
+<h3>Notes on <code>sort</code></h3>
+<p>The <code>sort</code> command is used to sort the input data. The
+<code>-u</code> option is used to remove duplicate lines.</p>
+</div>
+<div id="notes-on-uniq" class="section level3">
+<h3>Notes on <code>uniq</code></h3>
+<p>The <code>uniq</code> command is used to remove duplicate lines from
+a sorted file. If the file is not sorted <code>uniq</code> will only
+output the current line if it is different from the previous line.</p>
+<p>In real-world datasets values in a column often occur in groups, so
+the combinations <code>uniq | sort | uniq</code> and
+<code>uniq | uniq | sort -u</code> may effectively reduce the number of
+lines piped to <code>sort</code>.</p>
+</div>
+</div>
+<div id="results" class="section level2">
+<h2>Results</h2>
+<div id="results-by-file" class="section level3">
+<h3>Results by file</h3>
+<div id="license-column" class="section level4">
+<h4><code>license</code> column</h4>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">method</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">sort -u</td>
+<td align="right">24.6963</td>
+</tr>
+<tr class="even">
+<td align="left">uniq | sort -u</td>
+<td align="right">26.9240</td>
+</tr>
+<tr class="odd">
+<td align="left">uniq | sort | uniq</td>
+<td align="right">32.5221</td>
+</tr>
+<tr class="even">
+<td align="left">sort | uniq</td>
+<td align="right">64.5948</td>
+</tr>
+</tbody>
+</table>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">method</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">uniq | sort -u</td>
+<td align="right">16.4382</td>
+</tr>
+<tr class="even">
+<td align="left">sort -u</td>
+<td align="right">17.2138</td>
+</tr>
+<tr class="odd">
+<td align="left">uniq | sort | uniq</td>
+<td align="right">19.4527</td>
+</tr>
+<tr class="even">
+<td align="left">sort | uniq</td>
+<td align="right">38.7181</td>
+</tr>
+</tbody>
+</table>
+<p>The two fastest methods for both user and total time are
+<code>uniq | sort -u</code> and <code>sort -u</code>.
+<code>sort | uniq</code> is the slowest method, taking 2.36 times longer
+than <code>uniq | sort -u</code> for the user, and 2.62 times longer for
+the total time.</p>
+</div>
+<div id="publisher-column" class="section level4">
+<h4><code>publisher</code> column</h4>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">method</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">sort -u</td>
+<td align="right">40.8204</td>
+</tr>
+<tr class="even">
+<td align="left">sort | uniq</td>
+<td align="right">41.6528</td>
+</tr>
+<tr class="odd">
+<td align="left">uniq | sort | uniq</td>
+<td align="right">46.3127</td>
+</tr>
+<tr class="even">
+<td align="left">uniq | sort -u</td>
+<td align="right">47.5305</td>
+</tr>
+</tbody>
+</table>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">method</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">sort -u</td>
+<td align="right">40.8204</td>
+</tr>
+<tr class="even">
+<td align="left">sort | uniq</td>
+<td align="right">41.6528</td>
+</tr>
+<tr class="odd">
+<td align="left">uniq | sort | uniq</td>
+<td align="right">46.3127</td>
+</tr>
+<tr class="even">
+<td align="left">uniq | sort -u</td>
+<td align="right">47.5305</td>
+</tr>
+</tbody>
+</table>
+<p>The fastest times for both user and total time are
+<code>sort -u</code> and <code>sort | uniq</code>. The calculation is
+slower than for the <code>license</code> file in all cases apart from
+the compute time for <code>sort | uniq</code>.</p>
+</div>
+<div id="unique-column" class="section level4">
+<h4><code>unique</code> column</h4>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">method</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">sort -u</td>
+<td align="right">40.8204</td>
+</tr>
+<tr class="even">
+<td align="left">sort | uniq</td>
+<td align="right">41.6528</td>
+</tr>
+<tr class="odd">
+<td align="left">uniq | sort | uniq</td>
+<td align="right">46.3127</td>
+</tr>
+<tr class="even">
+<td align="left">uniq | sort -u</td>
+<td align="right">47.5305</td>
+</tr>
+</tbody>
+</table>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">method</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">sort -u</td>
+<td align="right">40.8204</td>
+</tr>
+<tr class="even">
+<td align="left">sort | uniq</td>
+<td align="right">41.6528</td>
+</tr>
+<tr class="odd">
+<td align="left">uniq | sort | uniq</td>
+<td align="right">46.3127</td>
+</tr>
+<tr class="even">
+<td align="left">uniq | sort -u</td>
+<td align="right">47.5305</td>
+</tr>
+</tbody>
+</table>
+<p>The fastest times for both user and total time are
+<code>sort -u</code> and <code>sort | uniq</code>, although all methods
+are relatively closely matched.</p>
+</div>
+<div id="alternating-column" class="section level4">
+<h4><code>alternating</code> column</h4>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">method</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">uniq | sort -u</td>
+<td align="right">24.9655</td>
+</tr>
+<tr class="even">
+<td align="left">sort -u</td>
+<td align="right">30.4055</td>
+</tr>
+<tr class="odd">
+<td align="left">sort | uniq</td>
+<td align="right">34.3696</td>
+</tr>
+<tr class="even">
+<td align="left">uniq | sort | uniq</td>
+<td align="right">37.9967</td>
+</tr>
+</tbody>
+</table>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">method</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">uniq | sort -u</td>
+<td align="right">24.9655</td>
+</tr>
+<tr class="even">
+<td align="left">sort -u</td>
+<td align="right">30.4055</td>
+</tr>
+<tr class="odd">
+<td align="left">sort | uniq</td>
+<td align="right">34.3696</td>
+</tr>
+<tr class="even">
+<td align="left">uniq | sort | uniq</td>
+<td align="right">37.9967</td>
+</tr>
+</tbody>
+</table>
+<p>The fastest times for both user and total time are
+<code>uniq | sort -u</code> and <code>sort -u</code>.</p>
+</div>
+<div id="same-column" class="section level4">
+<h4><code>same</code> column</h4>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">method</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">uniq | sort -u</td>
+<td align="right">7.7747</td>
+</tr>
+<tr class="even">
+<td align="left">uniq | sort | uniq</td>
+<td align="right">7.8341</td>
+</tr>
+<tr class="odd">
+<td align="left">sort -u</td>
+<td align="right">19.6351</td>
+</tr>
+<tr class="even">
+<td align="left">sort | uniq</td>
+<td align="right">43.1565</td>
+</tr>
+</tbody>
+</table>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">method</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">uniq | sort -u</td>
+<td align="right">7.7747</td>
+</tr>
+<tr class="even">
+<td align="left">uniq | sort | uniq</td>
+<td align="right">7.8341</td>
+</tr>
+<tr class="odd">
+<td align="left">sort -u</td>
+<td align="right">19.6351</td>
+</tr>
+<tr class="even">
+<td align="left">sort | uniq</td>
+<td align="right">43.1565</td>
+</tr>
+</tbody>
+</table>
+<p>The fastest times for both user and total time are
+<code>uniq | sort -u</code> and <code>uniq | sort | uniq</code>, which
+are similar in time taken and noticeably faster than the others.</p>
+</div>
+</div>
+<div id="results-by-method" class="section level3">
+<h3>Results by method</h3>
+<div id="uniq-sort--u" class="section level4">
+<h4><code>uniq | sort -u</code></h4>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">file</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">publisher</td>
+<td align="right">6.4099</td>
+</tr>
+<tr class="even">
+<td align="left">same</td>
+<td align="right">7.7747</td>
+</tr>
+<tr class="odd">
+<td align="left">alternate</td>
+<td align="right">24.9655</td>
+</tr>
+<tr class="even">
+<td align="left">license</td>
+<td align="right">26.9240</td>
+</tr>
+<tr class="odd">
+<td align="left">unique</td>
+<td align="right">47.5305</td>
+</tr>
+</tbody>
+</table>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">file</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">publisher</td>
+<td align="right">6.4099</td>
+</tr>
+<tr class="even">
+<td align="left">same</td>
+<td align="right">7.7747</td>
+</tr>
+<tr class="odd">
+<td align="left">alternate</td>
+<td align="right">24.9655</td>
+</tr>
+<tr class="even">
+<td align="left">license</td>
+<td align="right">26.9240</td>
+</tr>
+<tr class="odd">
+<td align="left">unique</td>
+<td align="right">47.5305</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="sort-uniq" class="section level4">
+<h4><code>sort | uniq</code></h4>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">file</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">publisher</td>
+<td align="right">21.7443</td>
+</tr>
+<tr class="even">
+<td align="left">alternate</td>
+<td align="right">34.3696</td>
+</tr>
+<tr class="odd">
+<td align="left">unique</td>
+<td align="right">41.6528</td>
+</tr>
+<tr class="even">
+<td align="left">same</td>
+<td align="right">43.1565</td>
+</tr>
+<tr class="odd">
+<td align="left">license</td>
+<td align="right">64.5948</td>
+</tr>
+</tbody>
+</table>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">file</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">publisher</td>
+<td align="right">21.7443</td>
+</tr>
+<tr class="even">
+<td align="left">alternate</td>
+<td align="right">34.3696</td>
+</tr>
+<tr class="odd">
+<td align="left">unique</td>
+<td align="right">41.6528</td>
+</tr>
+<tr class="even">
+<td align="left">same</td>
+<td align="right">43.1565</td>
+</tr>
+<tr class="odd">
+<td align="left">license</td>
+<td align="right">64.5948</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="uniq-sort-uniq" class="section level4">
+<h4><code>uniq | sort | uniq</code></h4>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">file</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">same</td>
+<td align="right">7.8341</td>
+</tr>
+<tr class="even">
+<td align="left">publisher</td>
+<td align="right">8.5796</td>
+</tr>
+<tr class="odd">
+<td align="left">license</td>
+<td align="right">32.5221</td>
+</tr>
+<tr class="even">
+<td align="left">alternate</td>
+<td align="right">37.9967</td>
+</tr>
+<tr class="odd">
+<td align="left">unique</td>
+<td align="right">46.3127</td>
+</tr>
+</tbody>
+</table>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">file</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">same</td>
+<td align="right">7.8341</td>
+</tr>
+<tr class="even">
+<td align="left">publisher</td>
+<td align="right">8.5796</td>
+</tr>
+<tr class="odd">
+<td align="left">license</td>
+<td align="right">32.5221</td>
+</tr>
+<tr class="even">
+<td align="left">alternate</td>
+<td align="right">37.9967</td>
+</tr>
+<tr class="odd">
+<td align="left">unique</td>
+<td align="right">46.3127</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="uniq-sort--u-1" class="section level4">
+<h4><code>uniq | sort -u</code></h4>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">file</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">publisher</td>
+<td align="right">6.4099</td>
+</tr>
+<tr class="even">
+<td align="left">same</td>
+<td align="right">7.7747</td>
+</tr>
+<tr class="odd">
+<td align="left">alternate</td>
+<td align="right">24.9655</td>
+</tr>
+<tr class="even">
+<td align="left">license</td>
+<td align="right">26.9240</td>
+</tr>
+<tr class="odd">
+<td align="left">unique</td>
+<td align="right">47.5305</td>
+</tr>
+</tbody>
+</table>
+<p><img src="Bash-unique-values-from-column_files/figure-html/unnamed-chunk-36-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">file</th>
+<th align="right">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">publisher</td>
+<td align="right">6.4099</td>
+</tr>
+<tr class="even">
+<td align="left">same</td>
+<td align="right">7.7747</td>
+</tr>
+<tr class="odd">
+<td align="left">alternate</td>
+<td align="right">24.9655</td>
+</tr>
+<tr class="even">
+<td align="left">license</td>
+<td align="right">26.9240</td>
+</tr>
+<tr class="odd">
+<td align="left">unique</td>
+<td align="right">47.5305</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="conclusions" class="section level2">
+<h2>Conclusions</h2>
+<p>For most real-world scenarios <code>sort -u</code> is probably a time
+efficient choice. For very large datasets which are predominantly single
+valued <code>uniq | sort -u</code> or <code>uniq | sort | uniq</code>
+may be more efficient.</p>
+</div>
+<div id="acknowledgements" class="section level2">
+<h2>Acknowledgements</h2>
+<p>The virtual machine used for testing was provided by the Natural
+History Museum, London.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent"
+entry-spacing="0">
+<div id="ref-gbif2024" class="csl-entry">
+GBIF.Org User. 2024. <span>“Occurrence Download.”</span> The Global
+Biodiversity Information Facility. <a
+href="https://doi.org/10.15468/DL.6PVVSH">https://doi.org/10.15468/DL.6PVVSH</a>.
+</div>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

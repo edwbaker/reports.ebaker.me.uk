@@ -1,0 +1,65 @@
+---
+title: "GBIF: data wrangling without 'big data' tools"
+author: "Ed Baker"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    self_contained: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+ToDo: What does GBIF say?
+
+## Is there another way?
+
+Possibly.
+
+For heavy-duty analysis of large datasets, you might need to use big data tools. But for some small tasks, you can get by with a handful of command-line tools.
+
+## Building blocks
+
+### Extracting a single column of data
+
+ToDo: Intro
+
+```{bash eval=FALSE}
+#!/usr/bin/awk -f
+
+BEGIN {
+  FS="\t"
+  matchcol=ARGV[1]
+  ARGV[1]=""
+}
+
+FNR==1 {
+  for (col=1;col<=NF;col++)
+    if ($col==matchcol)
+      next
+}
+
+{ print $col }
+
+```
+
+If the above script is saved as the executable file `get_col` it can be used to extract the column `license` from the `multimedia.txt` file as shown below.
+
+```{bash}
+./get_col license multimedia.txt > licenses.txt
+```
+
+### Extracting unique values from a column
+
+
+
+## Examples
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## References
+
+GBIF.org (17 October 2024) GBIF Occurrence Download <https://doi.org/10.15468/dl.6pvvsh> accessed via GBIF.org on 2024-10-17.

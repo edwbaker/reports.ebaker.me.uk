@@ -1,0 +1,518 @@
+---
+title: 'Getting unique values from columns: performance comparison'
+author: "Ed Baker"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    self_contained: false
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+col_ratio <- function(col) {
+  return(round(
+    max(col) / min(col),
+    2
+  ))
+}
+```
+
+## Introduction
+
+Getting a set of unique values from a column is a common operation in data analysis. A commonly suggested technique is to use the `sort` and `uniq` commands in combination. This study compares the performance of this technique with some variations on a real-world dataset and some contrived test examples.
+
+## Method
+
+### Datasets
+
+The dataset is two files derived from a GBIF exported with 89,732,452 rows and 15 columns [@gbif2024]. The investigation focusses on two columns from this dataset: 
+
+1. `publisher` with 30 unique values,
+2. `license` with 175,716 unique values. 
+
+These columns were isolated into separate files for each column to ensure the test is not influenced by column separation.
+
+```{r, echo=FALSE}
+data <- read.csv("data/unique_values_column.csv")
+sums <- data$user + data$sys
+names <- c(colnames(data), "total")
+data <- cbind(data, sums)
+colnames(data) <- names
+
+means <- aggregate(data$total, by=list(data$method, data$file), mean)
+colnames(means) <- c("method", "file", "mean")
+
+user_means <- aggregate(data$user, by=list(data$method, data$file), mean)
+colnames(user_means) <- c("method", "file", "mean")
+```
+
+In order to compare with three more theoretical benchmarks three additional files (with the same number of lines as the real world example) were created:
+
+1. `same`: A file where every line reads "BioAcoustica: Sound Library"
+2. `unique`: A file with incrementing integers
+3. `alternate`: Alternating lines of true and false
+
+### Machine details
+
+The tests were performed on a VMWare virtualised instance of Ubuntu 22.04.05 LTS with 12GB of RAM and 4 Intel Xeon Platinum 8380 CPUs running at 2.30GHz.
+
+### Timing
+
+The bash `time` function was used to measure the time taken to extract unique values from each column, with 10 repetitions for each method. As the real time taken (as reported by `time`) may be affected by other processes running on the system, the sum of `user` and `sys` time were used as the `total` measure of performance, although the `real` time is also reported as a measure of the time taken to run the command and assess the impact of multi-thread operations. Tests of single core performance were not conducted as it's 2024.
+
+The following methods were tested:
+
+1. `sort -u`
+2. `uniq | sort -u`
+3. `sort | uniq`
+4. `uniq | uniq | sort -u`
+5. `uniq | sort | uniq`
+
+The file being tested was read by the first `sort` or `uniq` command, and the output was piped to `/dev/null`.
+
+### Notes on `sort`
+
+The `sort` command is used to sort the input data. The `-u` option is used to remove duplicate lines.
+
+### Notes on `uniq`
+
+The `uniq` command is used to remove duplicate lines from a sorted file. If the file is not sorted `uniq` will only output the current line if it is different from the previous line.
+
+In real-world datasets values in a column often occur in groups, so the combinations `uniq | sort | uniq` and `uniq | uniq | sort -u` may effectively reduce the number of lines piped to `sort`.
+
+## Results
+
+### Results by file
+
+#### `license` column
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total compute time",
+  data[data$file=="license" & data$method=="sort -u", "total"],
+  data[data$file=="license" & data$method=="sort | uniq", "total"],
+  data[data$file=="license" & data$method=="uniq | sort | uniq", "total"],
+  data[data$file=="license" & data$method=="uniq | sort -u", "total"],
+  names=unique(data$method),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+license_means <- means[means$file=="license", c("method", "mean")]
+knitr::kable(license_means[order(license_means$mean),], row.names=FALSE)
+```
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total user time",
+  data[data$file=="license" & data$method=="sort -u", "user"],
+  data[data$file=="license" & data$method=="sort | uniq", "user"],
+  data[data$file=="license" & data$method=="uniq | sort | uniq", "user"],
+  data[data$file=="license" & data$method=="uniq | sort -u", "user"],
+  names=unique(data$method),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+license_usr_means <- user_means[means$file=="license", c("method", "mean")]
+knitr::kable(license_usr_means[order(license_usr_means$mean),], row.names=FALSE)
+```
+
+The two fastest methods for both user and total time are `uniq | sort -u`	and `sort -u`. `sort | uniq` is the slowest method, taking `r col_ratio(license_usr_means$mean)` times longer than `uniq | sort -u` for the user, and `r col_ratio(license_means$mean)` times longer for the total time.
+
+#### `publisher` column
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total compute time",
+  data[data$file=="unique" & data$method=="sort -u", "total"],
+  data[data$file=="unique" & data$method=="sort | uniq", "total"],
+  data[data$file=="unique" & data$method=="uniq | sort | uniq", "total"],
+  data[data$file=="unique" & data$method=="uniq | sort -u", "total"],
+  names=unique(data$method),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+
+```
+
+```{r, echo=FALSE}
+publisher_means <- means[means$file=="unique", c("method", "mean")]
+knitr::kable(publisher_means[order(publisher_means$mean),], row.names=FALSE)
+```
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total user time",
+  data[data$file=="unique" & data$method=="sort -u", "user"],
+  data[data$file=="unique" & data$method=="sort | uniq", "user"],
+  data[data$file=="unique" & data$method=="uniq | sort | uniq", "user"],
+  data[data$file=="unique" & data$method=="uniq | sort -u", "user"],
+  names=unique(data$method),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+
+```
+
+```{r, echo=FALSE}
+publisher_usr_means <- means[means$file=="unique", c("method", "mean")]
+knitr::kable(publisher_usr_means[order(publisher_usr_means$mean),], row.names=FALSE)
+```
+
+The fastest times for both user and total time are `sort -u` and `sort | uniq`. The calculation is slower than for the `license` file in all cases apart from the compute time for `sort | uniq`.
+
+#### `unique` column
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total compute time",
+  data[data$file=="unique" & data$method=="sort -u", "total"],
+  data[data$file=="unique" & data$method=="sort | uniq", "total"],
+  data[data$file=="unique" & data$method=="uniq | sort | uniq", "total"],
+  data[data$file=="unique" & data$method=="uniq | sort -u", "total"],
+  names=unique(data$method),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+unique_means <- means[means$file=="unique", c("method", "mean")]
+knitr::kable(unique_means[order(unique_means$mean),], row.names=FALSE)
+```
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total user time",
+  data[data$file=="unique" & data$method=="sort -u", "user"],
+  data[data$file=="unique" & data$method=="sort | uniq", "user"],
+  data[data$file=="unique" & data$method=="uniq | sort | uniq", "user"],
+  data[data$file=="unique" & data$method=="uniq | sort -u", "user"],
+  names=unique(data$method),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+unique_usr_means <- means[means$file=="unique", c("method", "mean")]
+knitr::kable(unique_usr_means[order(unique_usr_means$mean),], row.names=FALSE)
+```
+
+The fastest times for both user and total time are `sort -u` and `sort | uniq`, although all methods are relatively closely matched.
+
+#### `alternating` column
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total compute time",
+  data[data$file=="alternate" & data$method=="sort -u", "total"],
+  data[data$file=="alternate" & data$method=="sort | uniq", "total"],
+  data[data$file=="alternate" & data$method=="uniq | sort | uniq", "total"],
+  data[data$file=="alternate" & data$method=="uniq | sort -u", "total"],
+  names=unique(data$method),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+alternate_means <- means[means$file=="alternate", c("method", "mean")]
+knitr::kable(alternate_means[order(alternate_means$mean),], row.names=FALSE)
+```
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total user time",
+  data[data$file=="alternate" & data$method=="sort -u", "user"],
+  data[data$file=="alternate" & data$method=="sort | uniq", "user"],
+  data[data$file=="alternate" & data$method=="uniq | sort | uniq", "user"],
+  data[data$file=="alternate" & data$method=="uniq | sort -u", "user"],
+  names=unique(data$method),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+alternate_usr_means <- means[means$file=="alternate", c("method", "mean")]
+knitr::kable(alternate_usr_means[order(alternate_usr_means$mean),], row.names=FALSE)
+```
+
+The fastest times for both user and total time are `uniq | sort -u` and `sort -u`.
+
+#### `same` column
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total compute time",
+  data[data$file=="same" & data$method=="sort -u", "total"],
+  data[data$file=="same" & data$method=="sort | uniq", "total"],
+  data[data$file=="same" & data$method=="uniq | sort | uniq", "total"],
+  data[data$file=="same" & data$method=="uniq | sort -u", "total"],
+  names=unique(data$method),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+same_means <- means[means$file=="same", c("method", "mean")]
+knitr::kable(same_means[order(same_means$mean),], row.names=FALSE)
+```
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total user time",
+  data[data$file=="same" & data$method=="sort -u", "user"],
+  data[data$file=="same" & data$method=="sort | uniq", "user"],
+  data[data$file=="same" & data$method=="uniq | sort | uniq", "user"],
+  data[data$file=="same" & data$method=="uniq | sort -u", "user"],
+  names=unique(data$method),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+same_usr_means <- means[means$file=="same", c("method", "mean")]
+knitr::kable(same_usr_means[order(same_usr_means$mean),], row.names=FALSE)
+```
+
+The fastest times for both user and total time are `uniq | sort -u` and `uniq | sort | uniq`, which are similar in time taken and noticeably faster than the others.
+
+### Results by method
+
+#### `uniq | sort -u`
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total compute time",
+  data[data$method=="uniq | sort -u" & data$file=="license", "total"],
+  data[data$method=="uniq | sort -u" & data$file=="publisher", "total"],
+  data[data$method=="uniq | sort -u" & data$file=="same", "total"],
+  data[data$method=="uniq | sort -u" & data$file=="alternate", "total"],
+  data[data$method=="uniq | sort -u" & data$file=="unique", "total"],
+  names=unique(data$file),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+file1_means <- means[means$method=="uniq | sort -u", c("file", "mean")]
+knitr::kable(file1_means[order(file1_means$mean),], row.names=FALSE)
+```
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total user time",
+  data[data$method=="uniq | sort -u" & data$file=="license", "user"],
+  data[data$method=="uniq | sort -u" & data$file=="publisher", "user"],
+  data[data$method=="uniq | sort -u" & data$file=="same", "user"],
+  data[data$method=="uniq | sort -u" & data$file=="alternate", "user"],
+  data[data$method=="uniq | sort -u" & data$file=="unique", "user"],
+  names=unique(data$file),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+file1_usr_means <- means[means$method=="uniq | sort -u", c("file", "mean")]
+knitr::kable(file1_usr_means[order(file1_usr_means$mean),], row.names=FALSE)
+```
+
+#### `sort | uniq`
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total compute time",
+  data[data$method=="sort | uniq" & data$file=="license", "total"],
+  data[data$method=="sort | uniq" & data$file=="publisher", "total"],
+  data[data$method=="sort | uniq" & data$file=="same", "total"],
+  data[data$method=="sort | uniq" & data$file=="alternate", "total"],
+  data[data$method=="sort | uniq" & data$file=="unique", "total"],
+  names=unique(data$file),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+file2_means <- means[means$method=="sort | uniq", c("file", "mean")]
+knitr::kable(file2_means[order(file2_means$mean),], row.names=FALSE)
+```
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total user time",
+  data[data$method=="sort | uniq" & data$file=="license", "user"],
+  data[data$method=="sort | uniq" & data$file=="publisher", "user"],
+  data[data$method=="sort | uniq" & data$file=="same", "user"],
+  data[data$method=="sort | uniq" & data$file=="alternate", "user"],
+  data[data$method=="sort | uniq" & data$file=="unique", "user"],
+  names=unique(data$file),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+file2_usr_means <- means[means$method=="sort | uniq", c("file", "mean")]
+knitr::kable(file2_usr_means[order(file2_usr_means$mean),], row.names=FALSE)
+```
+
+#### `uniq | sort | uniq`
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total compute time",
+  data[data$method=="uniq | sort | uniq" & data$file=="license", "total"],
+  data[data$method=="uniq | sort | uniq" & data$file=="publisher", "total"],
+  data[data$method=="uniq | sort | uniq" & data$file=="same", "total"],
+  data[data$method=="uniq | sort | uniq" & data$file=="alternate", "total"],
+  data[data$method=="uniq | sort | uniq" & data$file=="unique", "total"],
+  names=unique(data$file),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+file3_means <- means[means$method=="uniq | sort | uniq", c("file", "mean")]
+knitr::kable(file3_means[order(file3_means$mean),], row.names=FALSE)
+```
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total user time",
+  data[data$method=="uniq | sort | uniq" & data$file=="license", "user"],
+  data[data$method=="uniq | sort | uniq" & data$file=="publisher", "user"],
+  data[data$method=="uniq | sort | uniq" & data$file=="same", "user"],
+  data[data$method=="uniq | sort | uniq" & data$file=="alternate", "user"],
+  data[data$method=="uniq | sort | uniq" & data$file=="unique", "user"],
+  names=unique(data$file),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+file3_usr_means <- means[means$method=="uniq | sort | uniq", c("file", "mean")]
+knitr::kable(file3_usr_means[order(file3_usr_means$mean),], row.names=FALSE)
+```
+
+#### `uniq | sort -u`
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total compute time",
+  data[data$method=="uniq | sort -u" & data$file=="license", "total"],
+  data[data$method=="uniq | sort -u" & data$file=="publisher", "total"],
+  data[data$method=="uniq | sort -u" & data$file=="same", "total"],
+  data[data$method=="uniq | sort -u" & data$file=="alternate", "total"],
+  data[data$method=="uniq | sort -u" & data$file=="unique", "total"],
+  names=unique(data$file),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+file4_means <- means[means$method=="uniq | sort -u", c("file", "mean")]
+knitr::kable(file4_means[order(file4_means$mean),], row.names=FALSE)
+```
+
+```{r, echo=FALSE}
+par(mar = c(5,7,4,2) + 0.1)
+boxplot(
+  main = "Total user time",
+  data[data$method=="uniq | sort -u" & data$file=="license", "user"],
+  data[data$method=="uniq | sort -u" & data$file=="publisher", "user"],
+  data[data$method=="uniq | sort -u" & data$file=="same", "user"],
+  data[data$method=="uniq | sort -u" & data$file=="alternate", "user"],
+  data[data$method=="uniq | sort -u" & data$file=="unique", "user"],
+  names=unique(data$file),
+  las=2,
+  cex.axis=0.8,
+  ylim=c(0,70),
+  horizontal=TRUE
+  )
+```
+
+```{r, echo=FALSE}
+file4_usr_means <- means[means$method=="uniq | sort -u", c("file", "mean")]
+knitr::kable(file4_usr_means[order(file4_usr_means$mean),], row.names=FALSE)
+```
+
+## Conclusions
+
+For most real-world scenarios `sort -u` is probably a time efficient choice.  For very large datasets which are predominantly single valued `uniq | sort -u` or `uniq | sort | uniq` may be more efficient.
+
+## Acknowledgements
+
+The virtual machine used for testing was provided by the Natural History Museum, London. 
+
+## References
+
+<div id="refs"></div>
+
