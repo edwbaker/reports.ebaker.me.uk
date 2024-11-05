@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-The [NHMDE package](https://github.com/edwbaker/NHMDE) alongside [SonicScrewdriveR](https://sonicscrewdriver.ebaker.me.uk) can be used to pre-process the [FlyTunes)(https://ebaker.me.uk/flytunes) exports from Zooniverse for analysis.
+The [NHMDE package](https://github.com/edwbaker/NHMDE) alongside [SonicScrewdriveR](https://sonicscrewdriver.ebaker.me.uk) can be used to pre-process the [FlyTunes](https://ebaker.me.uk/flytunes) exports from Zooniverse for analysis.
 
 ### Installation
 
