@@ -78,6 +78,6 @@ barplot(
 
 ## References
 
-Baker E (2021). _SonicScrewdriverR_. <https://sonicscrewdriver.ebaker.me.uk>.
+Baker E (2021). _SonicScrewdriveR_. <https://sonicscrewdriver.ebaker.me.uk>.
 
 Baker E (2024). _NHMDE R Package_. <https://github.com/edwbaker/NHMDE>.
