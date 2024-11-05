@@ -14,25 +14,25 @@ match_name <- function(name, tick=FALSE) {
   if (length(name) > 1) {
     return(sapply(name, match_name, tick=tick))
   }
-  if (name == "nb_media_with_dc_rights") {
+  if (name == "nb_media_with_dc_rights" | name == "dc_rights") {
     ret = "dc:rights"
   }
-  if (name == "nb_media_with_dcterms_rights") {
+  if (name == "nb_media_with_dcterms_rights" | name == "dcterms_rights") {
     ret = "dcterms:rights"
   }
-  if (name == "nb_media_with_dcterms_usageterms") {
+  if (name == "nb_media_with_dcterms_usageterms" | name == "usageterms") {
     ret = "xmpRights:usageTerms"
   }
-  if (name == "nb_media_with_dcterms_webstatement") {
+  if (name == "nb_media_with_dcterms_webstatement" | name == "webstatement") {
     ret = "xmpRights:webStatement"
   }
-  if (name == "nb_media_with_credit") {
+  if (name == "nb_media_with_credit" | name == "credit") {
     ret = "photoshop:credit"
   }
-  if (name=="nb_media_with_owner") {
+  if (name=="nb_media_with_owner" | name == "owner") {
     ret = "xmpRights:owner"
   }
-  if (name == "nb_media_with_attributionlinkurl") {
+  if (name == "nb_media_with_attributionlinkurl" | name == "attributionlinkurl") {
     ret = "ac:attributionLinkURL"
   }
   if (!tick) {
@@ -45,6 +45,10 @@ match_name <- function(name, tick=FALSE) {
 
 ```{r get_data, include=FALSE}
 data <- read.csv("data/gbif_number_occ_ac_ext_rights.csv")
+
+data_counts <- read.csv("data/gbif_audiovisual_counts.csv", sep="\t", strip.white=T)
+data_counts[data_counts == "\\N"] <- ""
+data_counts$number_of_occurrences <- as.numeric(data_counts$number_of_occurrences)
 
 colnames(data) <- gsub("nb_media_owner", "nb_media_with_owner", colnames(data))
 colnames(data) <- gsub("nb_media_attributionlinkurl", "nb_media_with_attributionlinkurl", colnames(data))
@@ -70,7 +74,7 @@ The AC standard includes the following terms for rights information:
 - `xmpRights:owner`: A list of the names of the owners of the copyright.
 - `ac:attributionLinkURL`: The URL where information about ownership, attribution, etc. of the resource may be found..
 
-## Term usage by dataset
+## Usage by term
 
 ```{r, echo=FALSE}
 unused <- lapply(names(which(colSums(data[rights_cols] != 0)==0)), match_name, tick=TRUE)
@@ -90,6 +94,57 @@ barplot(
 )
 ```
 
+### Number of media items using each term
+
+```{r, echo=FALSE}
+names <- c("dc_rights", "dcterms_rights", "usageterms", "webstatement", "credit", "owner", "attributionlinkurl")
+
+barplot(
+  c(
+    sum(data_counts[data_counts$dc_rights != "", "number_of_occurrences"], na.rm = TRUE),
+    sum(data_counts[data_counts$dcterms_rights != "", "number_of_occurrences"], na.rm = TRUE),
+    sum(data_counts[data_counts$usageterms != "", "number_of_occurrences"], na.rm = TRUE),
+    sum(data_counts[data_counts$webstatement != "", "number_of_occurrences"], na.rm = TRUE),
+    sum(data_counts[data_counts$credit != "", "number_of_occurrences"], na.rm = TRUE),
+    sum(data_counts[data_counts$owner != "", "number_of_occurrences"], na.rm = TRUE),
+    sum(data_counts[data_counts$attributionlinkurl != "", "number_of_occurrences"], na.rm = TRUE)
+  ),
+  names.arg=gsub(":", "\n", match_name(names)),
+  cex.names=0.6
+)
+```
+
+### URI usage
+
+```{r, echo=FALSE}
+dc_rights_url <- startsWith(data_counts$dc_rights, "http")
+dcterms_rights_url <- startsWith(data_counts$dcterms_rights, "http")
+usageterms_url <- startsWith(data_counts$usageterms, "http")
+webstatement_url <- startsWith(data_counts$webstatement, "http")
+credit_url <- startsWith(data_counts$credit, "http")
+owner_url <- startsWith(data_counts$owner, "http")
+attributionlinkurl_url <- startsWith(data_counts$attributionlinkurl, "http")
+
+names <- c("dc_rights", "dcterms_rights", "usageterms", "webstatement", "credit", "owner", "attributionlinkurl")
+
+barplot(
+  c(
+    sum(dc_rights_url * as.numeric(data_counts$number_of_occurrences), na.rm=TRUE),
+    sum(dcterms_rights_url * as.numeric(data_counts$number_of_occurrences), na.rm=TRUE),
+    sum(usageterms_url * as.numeric(data_counts$number_of_occurrences), na.rm=TRUE),
+    sum(webstatement_url * as.numeric(data_counts$number_of_occurrences), na.rm=TRUE),
+    sum(credit_url * as.numeric(data_counts$number_of_occurrences), na.rm=TRUE),
+    sum(owner_url * as.numeric(data_counts$number_of_occurrences), na.rm=TRUE),
+    sum(attributionlinkurl_url * as.numeric(data_counts$number_of_occurrences), na.rm=TRUE)
+  ),
+  names.arg = gsub(":", "\n", match_name(names)),
+  cex.names=0.6,
+  main = "Number of media items using URIs for rights information"
+)
+```
+
+This suggests that `dc:terms` is regularly used incorrectly to provide a URI. Similarly, `dcterms:rights` is often used incorrectly by providing a non-URI string.
+
 ### Datasets usings dc:rights and dcterms:rights
 
 ```{r, echo=FALSE}
@@ -106,6 +161,15 @@ barplot(
 ```
 
 `r prettyNum(neither, big.mark=",")` datasets (representing `r prettyNum(sum(data[data$nb_media_with_dc_rights == 0 & data$nb_media_with_dcterms_rights == 0, "number_of_occurrences"]), big.mark = ",")` media items) use neither `dc:rights` nor `dcterms:rights`. One or other of these terms are required by the AC standard, so a significant number of datasets are potentially not compliant.
+
+```{r, echo=FALSE}
+rights_swapped <- (!dcterms_rights_url) & dc_rights_url
+
+barplot(
+  table(rights_swapped),
+  main="dc:rights and dcterms:rights swapped"
+)
+```
 
 ### Datasets usings dcterms:rights and xmpRights:webStatement
 
